@@ -1,0 +1,17 @@
+name: 'RPM specs matrix generator'
+description: 'Generate job matrix for all RPM specs in the project'
+inputs:
+  paths:
+    description: 'Paths where to look for RPM specs'
+    required: false
+    default: '.'
+  recursive:
+    description: 'Search recursively'
+    required: false
+    default: 'true'
+outputs:
+  matrix:
+    description: 'Job matrix'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
