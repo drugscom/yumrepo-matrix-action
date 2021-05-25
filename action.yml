@@ -1,6 +1,10 @@
 name: 'RPM specs matrix generator'
 description: 'Generate job matrix for all RPM specs in the project'
 inputs:
+  force:
+    description: 'Force rebuild packages'
+    required: false
+    default: 'false'
   paths:
     description: 'Paths where to look for RPM specs'
     required: false
