@@ -1,5 +1,6 @@
 import * as AWS from 'aws-sdk'
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import * as glob from '@actions/glob'
 import * as path from 'path'
 import * as utils from '@actions/utils'
@@ -13,18 +14,24 @@ interface JobMatrix {
   include: JobInclude[]
 }
 
+async function getBuildCommit(sdb: AWS.SimpleDB, spec: string): Promise<string | undefined> {
+  return (await getSDBAttributes(sdb, spec))['commit_sha']
+}
+
+async function getFileCommit(git: SimpleGit, file: string): Promise<string | undefined> {
+  const commit = (await git.log({file})).latest
+
+  if (!commit) {
+    throw new Error('Failed to retrieve spec latest commit')
+  }
+
+  return commit.hash
+}
+
 async function getIncludes(paths: string[], recursive, force: boolean): Promise<JobInclude[]> {
   const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
   const git = simpleGit({baseDir: workingDir})
   const returnVal: JobInclude[] = []
-
-  AWS.config.getCredentials(function (err) {
-    if (err) {
-      core.setFailed(`Error getting AWS credentials: ${err.stack}`)
-      process.exit()
-    }
-  })
-
   const simpleDB = new AWS.SimpleDB()
 
   for (const searchPath of paths) {
@@ -42,10 +49,10 @@ async function getIncludes(paths: string[], recursive, force: boolean): Promise<
       core.debug(`Found RPM spec "${spec}"`)
 
       if (!force) {
-        const specUpdated = await getLastUpdate(git, spec)
-        const specBuilt = await getLastBuild(simpleDB, spec)
+        const fileCommit = await getFileCommit(git, spec)
+        const buildCommit = await getBuildCommit(simpleDB, spec)
 
-        if (specBuilt && specBuilt >= specUpdated) {
+        if (buildCommit && buildCommit !== fileCommit) {
           core.warning(`Ignoring spec "${spec}" (repo is up to date)`)
           continue
         }
@@ -58,30 +65,16 @@ async function getIncludes(paths: string[], recursive, force: boolean): Promise<
   return returnVal
 }
 
-async function getLastBuild(sdb: AWS.SimpleDB, spec: string): Promise<Date | undefined> {
-  const attrs = await getSDBAttributes(sdb, spec)
-
-  const timestamp = parseInt(attrs['timestamp'], 10)
-
-  if (isNaN(timestamp)) {
-    return
-  }
-
-  return new Date(timestamp)
-}
-
-async function getLastUpdate(git: SimpleGit, file: string): Promise<Date> {
-  const commit = (await git.log({file})).latest
-  return commit ? new Date(commit.date) : new Date()
-}
-
 async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record<string, string>> {
+  const itemName = path.join(github.context.repo.owner, github.context.repo.repo, github.context.ref, spec)
+  const sdbDomain = utils.getInputAsString('sdb-domain')
+  core.debug(`Retrieving package data from SimpleDB domain "${sdbDomain}": ${itemName}`)
+
   return new Promise(resolve => {
     sdb.getAttributes(
       {
-        DomainName: 'packages',
-        ItemName: spec,
-        AttributeNames: ['timestamp']
+        DomainName: sdbDomain,
+        ItemName: itemName
       },
       function (err: AWS.AWSError, data: AWS.SimpleDB.GetAttributesResult) {
         if (err) {
@@ -97,6 +90,7 @@ async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record
           }
         }
 
+        core.debug(JSON.stringify(result))
         resolve(result)
       }
     )

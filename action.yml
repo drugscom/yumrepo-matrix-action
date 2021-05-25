@@ -2,7 +2,7 @@ name: 'RPM specs matrix generator'
 description: 'Generate job matrix for all RPM specs in the project'
 inputs:
   force:
-    description: 'Force rebuild packages'
+    description: 'Ignore SimpleDB metadata'
     required: false
     default: 'false'
   paths:
@@ -13,6 +13,10 @@ inputs:
     description: 'Search recursively'
     required: false
     default: 'true'
+  sdb-domain:
+    description: 'AWS SimpleDB domain'
+    required: false
+    default: 'packages'
 outputs:
   matrix:
     description: 'Job matrix'

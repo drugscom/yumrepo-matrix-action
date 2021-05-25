@@ -6,7 +6,7 @@ This action generates job matrix for all RPM specs in the project.
 
 ### `force`
 
-Force rebuild packages. Default `"false"`.
+Ignore SimpleDB metadata. Default `"false"`.
 
 ### `paths`
 
@@ -15,6 +15,10 @@ The paths where to look for RPM specs. Default `"."` (project root).
 ### `recursive`
 
 Search recursively. Default `"true"`.
+
+### `sdb-domain`
+
+AWS SimpleDB domain. Default `"packages"`.
 
 ## Outputs
 
