@@ -1,21 +1,77 @@
 import * as AWS from 'aws-sdk'
 import * as core from '@actions/core'
+import * as fs from 'fs'
 import * as github from '@actions/github'
 import * as glob from '@actions/glob'
 import * as path from 'path'
+import * as readline from 'readline'
 import * as utils from '@actions/utils'
+import {DepGraph} from 'dependency-graph'
 import simpleGit, {SimpleGit} from 'simple-git'
 
-interface JobInclude {
-  spec: string
+interface SpecDef {
+  specPath: string
+  pkgName: string
+  buildDeps: string[]
 }
 
-interface JobMatrix {
-  include: JobInclude[]
+function getBuildBundles(specDefs: Map<string, SpecDef>): string[] {
+  const result: string[] = []
+
+  const graph: DepGraph<SpecDef> = new DepGraph()
+  for (const spec of specDefs.values()) {
+    graph.addNode(spec.pkgName, spec)
+  }
+  for (const spec of specDefs.values()) {
+    for (const depName of spec.buildDeps) {
+      if (specDefs.has(depName)) {
+        graph.addDependency(spec.pkgName, depName)
+      }
+    }
+  }
+
+  for (const pkgName of graph.overallOrder(true)) {
+    core.debug(`Getting build bundle for package "${pkgName}"`)
+    const pkgList: string[] = [graph.getNodeData(pkgName).specPath]
+
+    for (const depName of graph.dependantsOf(pkgName)) {
+      core.debug(`Adding "${depName}" to the "${pkgName}" build bundle`)
+      pkgList.push(graph.getNodeData(depName).specPath)
+    }
+    result.push(pkgList.join(','))
+  }
+
+  return result
 }
 
 async function getBuildCommit(sdb: AWS.SimpleDB, spec: string): Promise<string | undefined> {
   return (await getSDBAttributes(sdb, spec))['commit_sha']
+}
+
+async function getBuildDeps(spec: string): Promise<string[]> {
+  const result: string[] = []
+  const readLine = readline.createInterface({
+    input: fs.createReadStream(spec),
+    crlfDelay: Infinity
+  })
+
+  for await (const line of readLine) {
+    const matched = line.split(/^\s*BuildRequires:\s*/, 2)
+
+    if (matched.length < 2) {
+      continue
+    }
+
+    const deps = matched[1].split(/[ ,]/)
+    for (const pkgName of deps) {
+      const match = pkgName.match(/^[a-zA-Z][-._+a-zA-Z0-9]+/)
+      if (match) {
+        result.push(match[0].replace(/-devel$/, ''))
+      }
+    }
+  }
+
+  return result
 }
 
 async function getFileCommit(git: SimpleGit, file: string): Promise<string | undefined> {
@@ -28,10 +84,10 @@ async function getFileCommit(git: SimpleGit, file: string): Promise<string | und
   return commit.hash
 }
 
-async function getIncludes(paths: string[], recursive, force: boolean): Promise<JobInclude[]> {
+async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<Map<string, SpecDef>> {
   const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
   const git = simpleGit({baseDir: workingDir})
-  const returnVal: JobInclude[] = []
+  const result: Map<string, SpecDef> = new Map()
   const simpleDB = new AWS.SimpleDB()
 
   for (const searchPath of paths) {
@@ -52,17 +108,24 @@ async function getIncludes(paths: string[], recursive, force: boolean): Promise<
         const fileCommit = await getFileCommit(git, spec)
         const buildCommit = await getBuildCommit(simpleDB, spec)
 
-        if (buildCommit && buildCommit !== fileCommit) {
+        if (buildCommit && buildCommit === fileCommit) {
           core.warning(`Ignoring spec "${spec}" (repo is up to date)`)
           continue
         }
       }
 
-      returnVal.push({spec})
+      const buildDeps = await getBuildDeps(spec)
+      const pkgName = getPackageName(spec)
+
+      result.set(pkgName, {specPath: spec, pkgName, buildDeps})
     }
   }
 
-  return returnVal
+  return result
+}
+
+function getPackageName(spec: string): string {
+  return path.dirname(path.dirname(spec))
 }
 
 async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record<string, string>> {
@@ -103,8 +166,12 @@ async function run(): Promise<void> {
     const recursive = utils.getInputAsBool('recursive')
     const force = utils.getInputAsBool('force')
 
-    core.startGroup('Find targets')
-    const jobMatrix: JobMatrix = {include: await getIncludes(paths, recursive, force)}
+    core.startGroup('Find target specs')
+    const specDefs = await getSpecDefs(paths, recursive, force)
+    core.endGroup()
+
+    core.startGroup('Define build grouping and order')
+    const jobMatrix = {specs: getBuildBundles(specDefs)}
     core.endGroup()
 
     core.startGroup('Set output')
