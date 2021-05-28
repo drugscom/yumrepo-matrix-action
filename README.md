@@ -30,4 +30,8 @@ The job matrix.
 
 ```yaml
 uses: drugscom/yumrepo-matrix-action@v1
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: AAAAAAAAAAAAAAA
+  AWS_SECRET_ACCESS_KEY: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
