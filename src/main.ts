@@ -78,7 +78,7 @@ async function getFileCommit(git: SimpleGit, file: string): Promise<string | und
   const commit = (await git.log({file})).latest
 
   if (!commit) {
-    throw new Error('Failed to retrieve spec latest commit')
+    return
   }
 
   return commit.hash
@@ -86,9 +86,7 @@ async function getFileCommit(git: SimpleGit, file: string): Promise<string | und
 
 async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<Map<string, SpecDef>> {
   const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
-  const git = simpleGit({baseDir: workingDir})
   const result: Map<string, SpecDef> = new Map()
-  const simpleDB = new AWS.SimpleDB()
 
   for (const searchPath of paths) {
     const globPattern = path.join(searchPath, recursive ? '**/*.spec' : '*.spec')
@@ -104,14 +102,9 @@ async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<
 
       core.debug(`Found RPM spec "${spec}"`)
 
-      if (!force) {
-        const fileCommit = await getFileCommit(git, spec)
-        const buildCommit = await getBuildCommit(simpleDB, spec)
-
-        if (buildCommit && buildCommit === fileCommit) {
-          core.warning(`Ignoring spec "${spec}" (repo is up to date)`)
-          continue
-        }
+      if (await isUpToDate(spec, force)) {
+        core.info(`Ignoring spec "${spec}" (repo is up to date)`)
+        continue
       }
 
       const buildDeps = await getBuildDeps(spec)
@@ -158,6 +151,28 @@ async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record
       }
     )
   })
+}
+
+async function isUpToDate(spec: string, force: boolean): Promise<boolean> {
+  const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
+  const git = simpleGit({baseDir: workingDir})
+  const simpleDB = new AWS.SimpleDB()
+
+  if (force) {
+    return false
+  }
+
+  const fileCommit = await getFileCommit(git, spec)
+  if (!fileCommit) {
+    return false
+  }
+
+  const buildCommit = await getBuildCommit(simpleDB, spec)
+  if (!buildCommit) {
+    return false
+  }
+
+  return buildCommit === fileCommit
 }
 
 async function run(): Promise<void> {
