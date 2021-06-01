@@ -1,6 +1,6 @@
 {
   "name": "yumrepo-matrix-action",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Generate job matrix for all RPM specs in the project",
   "main": "lib/main.js",
   "types": "lib/main.d.ts",
