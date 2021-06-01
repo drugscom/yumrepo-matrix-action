@@ -186,7 +186,7 @@ async function run(): Promise<void> {
     core.endGroup()
 
     core.startGroup('Define build grouping and order')
-    const jobMatrix = {specs: getBuildBundles(specDefs)}
+    const jobMatrix = {spec: getBuildBundles(specDefs)}
     core.endGroup()
 
     core.startGroup('Set output')
