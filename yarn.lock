@@ -34,8 +34,8 @@
 
 "@actions/utils@git+https://github.com/drugscom/actions-utils.git":
   version "1.0.4"
-  uid cb871e9661f5ea1412a27e48eab38427dd2cec39
-  resolved "git+https://github.com/drugscom/actions-utils.git#cb871e9661f5ea1412a27e48eab38427dd2cec39"
+  uid "56926ab3cf775f6bcb071e9ec70b289a5eec21e4"
+  resolved "git+https://github.com/drugscom/actions-utils.git#56926ab3cf775f6bcb071e9ec70b289a5eec21e4"
   dependencies:
     "@actions/core" "^1.3.0"
     "@actions/github" "^5.0.0"
