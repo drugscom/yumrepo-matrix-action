@@ -35,7 +35,7 @@
   },
   "private": true,
   "devDependencies": {
-    "@types/node": "^15.9.0",
+    "@types/node": "^15.12.2",
     "@typescript-eslint/parser": "^4.26.0",
     "@vercel/ncc": "^0.28.5",
     "eslint": "^7.26.0",
