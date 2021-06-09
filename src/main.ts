@@ -159,18 +159,23 @@ async function isUpToDate(spec: string, force: boolean): Promise<boolean> {
   const simpleDB = new AWS.SimpleDB()
 
   if (force) {
+    core.debug(`Ignoring update status for "${spec}"`)
     return false
   }
 
   const fileCommit = await getFileCommit(git, spec)
   if (!fileCommit) {
+    core.debug(`Could not determine file commit hash for "${spec}"`)
     return false
   }
+  core.debug(`"${spec}" file commit hash: ${fileCommit}`)
 
   const buildCommit = await getBuildCommit(simpleDB, spec)
   if (!buildCommit) {
+    core.debug(`Could not determine build commit for "${spec}"`)
     return false
   }
+  core.debug(`"${spec}" build commit hash: ${buildCommit}`)
 
   return buildCommit === fileCommit
 }
