@@ -4,10 +4,6 @@ This action generates job matrix for all RPM specs in the project.
 
 ## Inputs
 
-### `force`
-
-Ignore SimpleDB metadata. Default `"false"`.
-
 ### `paths`
 
 The paths where to look for RPM specs. Default `"."` (project root).
@@ -15,6 +11,14 @@ The paths where to look for RPM specs. Default `"."` (project root).
 ### `recursive`
 
 Search recursively. Default `"true"`.
+
+### `bundle`
+
+Bundle specs in build dependency groups. Default `"true"`.
+
+### `force`
+
+Ignore SimpleDB metadata. Default `"false"`.
 
 ### `sdb-domain`
 

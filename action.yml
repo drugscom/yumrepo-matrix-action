@@ -1,10 +1,6 @@
 name: 'RPM specs matrix generator'
 description: 'Generate job matrix for all RPM specs in the project'
 inputs:
-  force:
-    description: 'Ignore SimpleDB metadata'
-    required: false
-    default: 'false'
   paths:
     description: 'Paths where to look for RPM specs'
     required: false
@@ -13,6 +9,14 @@ inputs:
     description: 'Search recursively'
     required: false
     default: 'true'
+  bundle:
+    description: 'Bundle specs in build dependency groups'
+    required: false
+    default: 'true'
+  force:
+    description: 'Ignore SimpleDB metadata'
+    required: false
+    default: 'false'
   sdb-domain:
     description: 'AWS SimpleDB domain'
     required: false

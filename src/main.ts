@@ -15,8 +15,10 @@ interface SpecDef {
   buildDeps: string[]
 }
 
-function getBuildBundles(specDefs: Map<string, SpecDef>): string[] {
+async function getBuildBundles(specs: string[]): Promise<string[]> {
   const result: string[] = []
+
+  const specDefs = await getSpecDefs(specs)
 
   const graph: DepGraph<SpecDef> = new DepGraph()
   for (const spec of specDefs.values()) {
@@ -84,9 +86,9 @@ async function getFileCommit(git: SimpleGit, file: string): Promise<string | und
   return commit.hash
 }
 
-async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<Map<string, SpecDef>> {
+async function getSpecList(paths: string[], recursive, force: boolean): Promise<string[]> {
   const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
-  const result: Map<string, SpecDef> = new Map()
+  const result: string[] = []
 
   for (const searchPath of paths) {
     const globPattern = path.join(searchPath, recursive ? '**/*.spec' : '*.spec')
@@ -102,11 +104,21 @@ async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<
         continue
       }
 
-      const buildDeps = await getBuildDeps(spec)
-      const pkgName = getPackageName(spec)
-
-      result.set(pkgName, {specPath: spec, pkgName, buildDeps})
+      result.push(spec)
     }
+  }
+
+  return result
+}
+
+async function getSpecDefs(specs: string[]): Promise<Map<string, SpecDef>> {
+  const result: Map<string, SpecDef> = new Map()
+
+  for (const specPath of specs) {
+    const pkgName = getPackageName(specPath)
+    const buildDeps = await getBuildDeps(specPath)
+
+    result.set(pkgName, {specPath, pkgName, buildDeps})
   }
 
   return result
@@ -149,14 +161,14 @@ async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record
 }
 
 async function isUpToDate(spec: string, force: boolean): Promise<boolean> {
-  const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
-  const git = simpleGit({baseDir: workingDir})
-  const simpleDB = new AWS.SimpleDB()
-
   if (force) {
     core.debug(`Ignoring update status for "${spec}"`)
     return false
   }
+
+  const workingDir = process.env['GITHUB_WORKSPACE'] ? process.env['GITHUB_WORKSPACE'] : process.cwd()
+  const git = simpleGit({baseDir: workingDir})
+  const simpleDB = new AWS.SimpleDB()
 
   const fileCommit = await getFileCommit(git, spec)
   if (!fileCommit) {
@@ -179,19 +191,23 @@ async function run(): Promise<void> {
   try {
     const paths = utils.getInputAsArray('paths')
     const recursive = utils.getInputAsBool('recursive')
+    const bundle = utils.getInputAsBool('bundle')
     const force = utils.getInputAsBool('force')
 
     core.startGroup('Find target specs')
-    const specDefs = await getSpecDefs(paths, recursive, force)
+    const specs = await getSpecList(paths, recursive, force)
+    let output = {spec: specs}
     core.endGroup()
 
-    core.startGroup('Define build grouping and order')
-    const jobMatrix = {spec: getBuildBundles(specDefs)}
-    core.endGroup()
+    if (bundle) {
+      core.startGroup('Define build grouping and order')
+      output = {spec: await getBuildBundles(specs)}
+      core.endGroup()
+    }
 
     core.startGroup('Set output')
-    core.setOutput('matrix', JSON.stringify(jobMatrix))
-    core.info(JSON.stringify(jobMatrix, null, 2))
+    core.setOutput('matrix', JSON.stringify(output))
+    core.info(JSON.stringify(output, null, 2))
     core.endGroup()
   } catch (error) {
     core.setFailed(error.message)
