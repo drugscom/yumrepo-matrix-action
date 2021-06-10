@@ -196,18 +196,19 @@ async function run(): Promise<void> {
 
     core.startGroup('Find target specs')
     const specs = await getSpecList(paths, recursive, force)
-    let output = {spec: specs}
+    const specsList = specs.join(',')
+    core.info(`Spec list: ${specsList}`)
+    core.setOutput('list', specsList)
     core.endGroup()
 
-    if (bundle) {
-      core.startGroup('Define build grouping and order')
-      output = {spec: await getBuildBundles(specs)}
-      core.endGroup()
+    if (!bundle) {
+      return
     }
 
-    core.startGroup('Set output')
-    core.setOutput('matrix', JSON.stringify(output))
-    core.info(JSON.stringify(output, null, 2))
+    core.startGroup('Define build grouping and order')
+    const matrix = {spec: await getBuildBundles(specs)}
+    core.info(`Matrix: ${JSON.stringify(matrix, null, 2)}`)
+    core.setOutput('matrix', JSON.stringify(matrix))
     core.endGroup()
   } catch (error) {
     core.setFailed(error.message)
