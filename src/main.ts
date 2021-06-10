@@ -118,7 +118,7 @@ function getPackageName(spec: string): string {
 
 async function getSDBAttributes(sdb: AWS.SimpleDB, spec: string): Promise<Record<string, string>> {
   const itemName = path.join(github.context.repo.owner, github.context.repo.repo, github.context.ref, spec)
-  const sdbDomain = utils.getInputAsString('sdb-domain')
+  const sdbDomain = core.getInput('sdb-domain')
   core.debug(`Retrieving package data from SimpleDB domain "${sdbDomain}": ${itemName}`)
 
   return new Promise(resolve => {

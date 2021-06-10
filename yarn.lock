@@ -33,8 +33,8 @@
     tunnel "0.0.6"
 
 "@actions/utils@git+https://github.com/drugscom/actions-utils.git":
-  version "1.0.4"
-  resolved "git+https://github.com/drugscom/actions-utils.git#5224db399c5df460c5f2b0a91d3d73a6443ed121"
+  version "1.0.6"
+  resolved "git+https://github.com/drugscom/actions-utils.git#040518fecf50d85a6138f5980347e59ae21ab496"
   dependencies:
     "@actions/core" "^1.3.0"
     "@actions/github" "^5.0.0"
