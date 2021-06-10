@@ -90,14 +90,9 @@ async function getSpecDefs(paths: string[], recursive, force: boolean): Promise<
 
   for (const searchPath of paths) {
     const globPattern = path.join(searchPath, recursive ? '**/*.spec' : '*.spec')
-    const specFiles = await (await glob.create(globPattern)).glob()
+    const specFiles = await (await glob.create(globPattern, {matchDirectories: false})).glob()
 
     for (let spec of specFiles) {
-      if (!utils.fileExist(spec)) {
-        core.warning(`Ignoring path "${spec}" (not a file)`)
-        continue
-      }
-
       spec = path.relative(workingDir, spec)
 
       core.debug(`Found RPM spec "${spec}"`)
