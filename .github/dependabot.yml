@@ -6,5 +6,7 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    reviewers:
+      - drugscom/ops
     allow:
       - dependency-type: production
