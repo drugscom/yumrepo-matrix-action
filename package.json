@@ -31,7 +31,7 @@
     "@actions/utils": "git+https://github.com/drugscom/actions-utils.git",
     "aws-sdk": "^2.1092.0",
     "dependency-graph": "^0.11.0",
-    "simple-git": "^3.3.0"
+    "simple-git": "^3.5.0"
   },
   "private": true,
   "devDependencies": {
