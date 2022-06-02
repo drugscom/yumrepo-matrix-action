@@ -2,14 +2,14 @@
 # yarn lockfile v1
 
 
-"@actions/core@^1.2.6", "@actions/core@^1.7.0", "@actions/core@^1.8.2":
+"@actions/core@^1.2.6", "@actions/core@^1.8.2":
   version "1.8.2"
   resolved "https://registry.yarnpkg.com/@actions/core/-/core-1.8.2.tgz#67539d669ae9b751430469e9ae4d83e0525973ac"
   integrity sha512-FXcBL7nyik8K5ODeCKlxi+vts7torOkoDAKfeh61EAkAy1HAvwn9uVzZBY0f15YcQTcZZ2/iSGBFHEuioZWfDA==
   dependencies:
     "@actions/http-client" "^2.0.1"
 
-"@actions/github@^5.0.1", "@actions/github@^5.0.3":
+"@actions/github@^5.0.3":
   version "5.0.3"
   resolved "https://registry.yarnpkg.com/@actions/github/-/github-5.0.3.tgz#b305765d6173962d113451ea324ff675aa674f35"
   integrity sha512-myjA/pdLQfhUGLtRZC/J4L1RXOG4o6aYdiEq+zr5wVVKljzbFld+xv10k1FX6IkIJtNxbAq44BdwSNpQ015P0A==
@@ -35,12 +35,12 @@
     tunnel "^0.0.6"
 
 "@actions/utils@git+https://github.com/drugscom/actions-utils.git":
-  version "1.1.3"
-  uid "7f81b68ab805450fcf42f834c02017414098b4ce"
-  resolved "git+https://github.com/drugscom/actions-utils.git#7f81b68ab805450fcf42f834c02017414098b4ce"
+  version "1.1.6"
+  uid "3cc0272b85fe76b30cec6171d3291710939c480c"
+  resolved "git+https://github.com/drugscom/actions-utils.git#3cc0272b85fe76b30cec6171d3291710939c480c"
   dependencies:
-    "@actions/core" "^1.7.0"
-    "@actions/github" "^5.0.1"
+    "@actions/core" "^1.8.2"
+    "@actions/github" "^5.0.3"
 
 "@babel/code-frame@7.12.11":
   version "7.12.11"
