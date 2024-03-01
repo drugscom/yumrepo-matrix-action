@@ -30,7 +30,7 @@
     "@actions/glob": "^0.4.0",
     "@actions/utils": "git+https://github.com/drugscom/actions-utils.git",
     "aws-sdk": "^2.1426.0",
-    "dependency-graph": "^0.11.0",
+    "dependency-graph": "^1.0.0",
     "simple-git": "^3.19.1"
   },
   "private": true,
